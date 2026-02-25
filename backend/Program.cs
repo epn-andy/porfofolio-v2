@@ -21,11 +21,25 @@ if (args.Contains("--migrate") || args.Contains("--seed"))
 
     if (args.Contains("--migrate"))
     {
-        Console.WriteLine("Running EF Core migrations...");
+        Console.WriteLine("Running schema migration...");
         using var scope = cliApp.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        await db.Database.MigrateAsync();
-        Console.WriteLine("Migrations complete.");
+
+        // Create all tables for a brand-new database
+        await db.Database.EnsureCreatedAsync();
+
+        // Idempotent additions for existing databases
+        await db.Database.ExecuteSqlRawAsync(@"
+            CREATE TABLE IF NOT EXISTS ""CvFiles"" (
+                ""Id""          serial PRIMARY KEY,
+                ""FileName""    text NOT NULL,
+                ""ContentType"" text NOT NULL,
+                ""Data""        bytea NOT NULL,
+                ""UploadedAt""  timestamp with time zone NOT NULL DEFAULT (now() AT TIME ZONE 'utc')
+            );
+        ");
+
+        Console.WriteLine("Migration complete.");
     }
 
     if (args.Contains("--seed"))
@@ -99,6 +113,10 @@ builder.Services.AddRateLimiter(opt =>
 });
 
 builder.Services.AddControllers();
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(opt =>
+{
+    opt.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB
+});
 
 var app = builder.Build();
 

@@ -105,5 +105,42 @@ function formatDate(d: string) {
     <div v-if="loading" class="flex items-center gap-2 text-slate-400 font-mono text-sm">
       <span class="animate-pulse">▋</span> loading pipeline data...
     </div>
+
+    <!-- Contact -->
+    <section class="border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+      <div class="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 px-5 py-3 flex items-center gap-2">
+        <span class="text-xs font-mono text-slate-400">stage</span>
+        <span class="text-xs font-mono font-bold text-slate-700 dark:text-slate-300">contact</span>
+        <span class="ml-auto w-2 h-2 rounded-full bg-emerald-500 dark:bg-cyan-400" />
+      </div>
+      <div class="p-8 bg-white dark:bg-slate-900">
+        <div class="max-w-md space-y-6">
+          <p class="text-slate-600 dark:text-slate-300 text-sm leading-relaxed">
+            Have a project in mind or just want to say hi?<br />
+            My inbox is always open.
+          </p>
+
+          <!-- Email -->
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-cyan-900/30 border border-emerald-200 dark:border-cyan-800 flex items-center justify-center shrink-0">
+              <span class="text-xs text-emerald-600 dark:text-cyan-400">@</span>
+            </div>
+            <a
+              href="mailto:hi@nayreisme.dev"
+              class="font-mono text-sm text-emerald-600 dark:text-cyan-400 hover:underline"
+            >hi@nayreisme.dev</a>
+          </div>
+
+          <!-- CV Download -->
+          <a
+            href="/api/cv/download"
+            download
+            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-emerald-400 dark:hover:border-cyan-400 transition-colors"
+          >
+            <span class="text-emerald-500 dark:text-cyan-400">↓</span> download cv
+          </a>
+        </div>
+      </div>
+    </section>
   </div>
 </template>

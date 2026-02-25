@@ -15,6 +15,7 @@ const navItems = [
   { to: '/admin/articles', label: 'articles' },
   { to: '/admin/projects', label: 'projects' },
   { to: '/admin/jobs', label: 'job history' },
+  { to: '/admin/cv', label: 'cv' },
 ]
 </script>
 

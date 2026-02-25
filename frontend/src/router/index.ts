@@ -28,6 +28,7 @@ const router = createRouter({
         { path: 'articles', name: 'admin-articles', component: () => import('../views/admin/ArticleEditorView.vue') },
         { path: 'projects', name: 'admin-projects', component: () => import('../views/admin/ProjectEditorView.vue') },
         { path: 'jobs', name: 'admin-jobs', component: () => import('../views/admin/JobHistoryEditorView.vue') },
+        { path: 'cv', name: 'admin-cv', component: () => import('../views/admin/CvEditorView.vue') },
       ],
     },
   ],
