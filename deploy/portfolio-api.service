@@ -12,10 +12,9 @@ After=network.target postgresql.service
 Wants=postgresql.service
 
 [Service]
-Type=notify
-NotifyAccess=all
-User=www-data
-Group=www-data
+Type=simple
+User=deploy
+Group=deploy
 WorkingDirectory=/var/www/portfolioapi
 ExecStart=/usr/bin/dotnet /var/www/portfolioapi/PortfolioAPI.dll
 
@@ -23,12 +22,8 @@ ExecStart=/usr/bin/dotnet /var/www/portfolioapi/PortfolioAPI.dll
 EnvironmentFile=/etc/portfolio/env
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
-
-# Security hardening
-NoNewPrivileges=true
-ProtectSystem=strict
-ReadWritePaths=/var/www/portfolioapi
-PrivateTmp=true
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+Environment=HOME=/home/deploy
 
 # Auto-restart on crash
 Restart=on-failure

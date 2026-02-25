@@ -74,8 +74,8 @@ JwtSettings__Audience=PortfolioApp
 JwtSettings__ExpiryMinutes=1440
 AllowedOrigins__0=https://${DOMAIN}
 EOF
-chmod 600 /etc/portfolio/env
-chown root:www-data /etc/portfolio/env
+chmod 640 /etc/portfolio/env
+chown root:deploy /etc/portfolio/env
 
 echo "    Secrets saved to /etc/portfolio/env"
 
