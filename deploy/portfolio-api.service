@@ -1,0 +1,42 @@
+# /etc/systemd/system/portfolio-api.service
+#
+# Install:
+#   sudo cp deploy/portfolio-api.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable portfolio-api
+#   sudo systemctl start portfolio-api
+
+[Unit]
+Description=Portfolio ASP.NET Core API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=notify
+NotifyAccess=all
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/portfolioapi
+ExecStart=/var/www/portfolioapi/PortfolioAPI
+
+# Secrets — never commit this file with real values
+EnvironmentFile=/etc/portfolio/env
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/www/portfolioapi
+PrivateTmp=true
+
+# Auto-restart on crash
+Restart=on-failure
+RestartSec=5s
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=portfolio-api
+
+[Install]
+WantedBy=multi-user.target
