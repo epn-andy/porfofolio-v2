@@ -35,8 +35,17 @@ function formatDate(d: string) {
         <span class="text-emerald-500 dark:text-cyan-400">Nugroho</span>
       </h1>
       <p class="mt-4 text-slate-500 dark:text-slate-400 max-w-xl font-mono text-sm leading-relaxed">
-        // Full-stack developer. Crafting systems that scale, pipelines that flow, and UIs that delight.
+        // Software engineer from Ponorogo, Indonesia — building full-stack web systems,
+        IoT solutions, and computer vision prototypes. Passionate about clean architecture,
+        developer tooling, and shipping products that actually work.
       </p>
+
+      <!-- Tags -->
+      <div class="mt-5 flex flex-wrap gap-2">
+        <span v-for="tag in ['Web Development', 'IoT', 'Computer Vision', 'ASP.NET Core', 'Vue 3']" :key="tag"
+          class="px-2.5 py-1 text-xs font-mono rounded-md bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
+        >{{ tag }}</span>
+      </div>
     </section>
 
     <!-- Job History pipeline -->
