@@ -83,5 +83,5 @@ Admin dashboard: `http://localhost:5173/admin/login`
 - Passwords hashed with BCrypt
 - All admin write endpoints require `[Authorize]`
 - Markdown sanitized with DOMPurify
-- Rate limiting: 60 req/min public, 10 req/min login
+- Rate limiting: 60 req/min public, 10 req/min login 
 
