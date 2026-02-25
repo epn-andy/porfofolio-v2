@@ -287,6 +287,42 @@ GitHub Actions will automatically build and deploy to your VPS. If you set up th
 
 ## Troubleshooting
 
+### GitHub Actions: `Permission denied (publickey,password)` / rsync error 255
+
+This means the `deploy` user on the VPS either has no SSH key, no home directory, or was created with `/usr/sbin/nologin` shell.
+
+**Fix — run this on the VPS:**
+
+```bash
+ssh root@YOUR_VPS_IP
+sudo bash /tmp/portfolio-v2/deploy/fix-deploy-user.sh
+```
+
+Or manually:
+
+```bash
+# Fix shell so SSH is allowed
+sudo usermod -s /bin/bash deploy
+
+# Fix .ssh directory
+sudo mkdir -p /home/deploy/.ssh
+sudo touch /home/deploy/.ssh/authorized_keys
+sudo chmod 700 /home/deploy/.ssh
+sudo chmod 600 /home/deploy/.ssh/authorized_keys
+sudo chown -R deploy:deploy /home/deploy/.ssh
+
+# Add your public key
+echo "ssh-ed25519 AAAA...YOUR_KEY..." | sudo tee -a /home/deploy/.ssh/authorized_keys
+```
+
+**Verify from your local Windows machine (Git Bash):**
+
+```bash
+ssh -i ~/.ssh/portfolio_deploy deploy@YOUR_VPS_IP "echo OK"
+```
+
+If it prints `OK`, re-run the GitHub Actions workflow.
+
 ### API is not starting or returning errors
 
 SSH into the VPS and check the logs:

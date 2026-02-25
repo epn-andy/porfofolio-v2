@@ -41,7 +41,10 @@ echo "==> [5/7] Create directories & deploy user"
 mkdir -p /var/www/portfolio /var/www/portfolioapi /etc/portfolio
 
 # Deploy user (used by GitHub Actions rsync + systemctl)
-id "${DEPLOY_USER}" &>/dev/null || useradd --system --no-create-home --shell /usr/sbin/nologin "${DEPLOY_USER}"
+# Must have a real home dir and bash shell so SSH + rsync work
+id "${DEPLOY_USER}" &>/dev/null || useradd -m -s /bin/bash "${DEPLOY_USER}"
+# Ensure home dir exists even if user was pre-created incorrectly
+mkhomedir_helper "${DEPLOY_USER}" 2>/dev/null || true
 mkdir -p /home/${DEPLOY_USER}/.ssh
 touch /home/${DEPLOY_USER}/.ssh/authorized_keys
 chown -R ${DEPLOY_USER}:${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh
