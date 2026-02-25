@@ -15,7 +15,7 @@ async function handleLogin() {
   loading.value = true
   try {
     await auth.login({ email: email.value, password: password.value })
-    router.push('/admin/articles')
+    await router.replace('/admin/articles')
   } catch {
     error.value = 'Invalid credentials. Please try again.'
   } finally {

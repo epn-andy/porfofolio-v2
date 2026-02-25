@@ -10,16 +10,22 @@ const api = axios.create({
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const toast = useToastStore()
-    const data = error.response?.data
+    const status = error.response?.status
 
-    // Use structured problem detail message if available, else fallback
+    // 401 from /auth/me is expected (not-logged-in check) — don't toast
+    const url: string = error.config?.url ?? ''
+    if (status === 401 && url.includes('/auth/me')) {
+      return Promise.reject(error)
+    }
+
+    const data = error.response?.data
     const message: string =
       data?.title ??
       data?.error ??
       error.message ??
       'An unexpected error occurred.'
 
+    const toast = useToastStore()
     toast.error(message)
     return Promise.reject(error)
   },

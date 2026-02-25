@@ -34,11 +34,21 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-  if (to.meta.requiresAuth) {
+  const requiresAuth = to.matched.some((r) => r.meta.requiresAuth)
+  if (requiresAuth) {
     const auth = useAuthStore()
     await auth.fetchMe()
     if (!auth.isAuthenticated) {
       return { name: 'admin-login' }
+    }
+  }
+
+  // Redirect already-authenticated users away from the login page
+  if (to.name === 'admin-login') {
+    const auth = useAuthStore()
+    await auth.fetchMe()
+    if (auth.isAuthenticated) {
+      return { name: 'admin-articles' }
     }
   }
 })
