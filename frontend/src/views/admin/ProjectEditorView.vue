@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { projectsService, type Project, type ProjectDto } from '../../services/projects'
+import { useToastStore } from '@/stores/toast'
 
+const toast = useToastStore()
 const projects = ref<Project[]>([])
 const loading = ref(true)
+const saving = ref(false)
 const showForm = ref(false)
 const editing = ref<Project | null>(null)
 
@@ -32,15 +35,33 @@ function openEdit(p: Project) {
 }
 
 async function save() {
-  if (editing.value) await projectsService.update(editing.value.id, form.value)
-  else await projectsService.create(form.value)
-  showForm.value = false
-  await loadProjects()
+  saving.value = true
+  try {
+    const dto: ProjectDto = {
+      ...form.value,
+      techStack: form.value.techStack?.trim() || null,
+      liveUrl: form.value.liveUrl?.trim() || null,
+      githubUrl: form.value.githubUrl?.trim() || null,
+      imageUrl: form.value.imageUrl?.trim() || null,
+    }
+    if (editing.value) {
+      await projectsService.update(editing.value.id, dto)
+      toast.success('Project updated.')
+    } else {
+      await projectsService.create(dto)
+      toast.success('Project created.')
+    }
+    showForm.value = false
+    await loadProjects()
+  } finally {
+    saving.value = false
+  }
 }
 
 async function remove(id: number) {
   if (!confirm('Delete this project?')) return
   await projectsService.delete(id)
+  toast.success('Project deleted.')
   await loadProjects()
 }
 </script>
@@ -82,9 +103,13 @@ async function remove(id: number) {
           <input v-model.number="form.order" type="number" class="w-full border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-400 dark:focus:border-cyan-400" />
         </div>
       </div>
+      <div>
+        <label class="block text-xs font-mono text-slate-500 mb-1">image url</label>
+        <input v-model="form.imageUrl" placeholder="https://..." class="w-full border border-slate-200 dark:border-slate-700 rounded px-3 py-1.5 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-400 dark:focus:border-cyan-400" />
+      </div>
       <div class="flex justify-end gap-2">
         <button @click="showForm = false" class="px-3 py-1.5 text-xs font-mono border border-slate-200 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">cancel</button>
-        <button @click="save" class="px-3 py-1.5 text-xs font-mono rounded bg-emerald-500 dark:bg-cyan-500 text-white hover:bg-emerald-600 dark:hover:bg-cyan-600 transition-colors">save</button>
+        <button @click="save" :disabled="saving" class="px-3 py-1.5 text-xs font-mono rounded bg-emerald-500 dark:bg-cyan-500 text-white hover:bg-emerald-600 dark:hover:bg-cyan-600 transition-colors disabled:opacity-50">{{ saving ? 'saving...' : 'save' }}</button>
       </div>
     </div>
 

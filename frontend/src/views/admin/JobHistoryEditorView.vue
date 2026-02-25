@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { jobHistoryService, type JobHistory, type JobHistoryDto } from '../../services/jobHistory'
+import { useToastStore } from '@/stores/toast'
 
+const toast = useToastStore()
 const jobs = ref<JobHistory[]>([])
 const loading = ref(true)
+const saving = ref(false)
 const showForm = ref(false)
 const editing = ref<JobHistory | null>(null)
 
@@ -32,20 +35,32 @@ function openEdit(j: JobHistory) {
 }
 
 async function save() {
-  const dto: JobHistoryDto = {
-    ...form.value,
-    startDate: new Date(form.value.startDate).toISOString(),
-    endDate: form.value.endDate ? new Date(form.value.endDate).toISOString() : null,
+  saving.value = true
+  try {
+    const dto: JobHistoryDto = {
+      ...form.value,
+      description: form.value.description?.trim() || null,
+      startDate: new Date(form.value.startDate).toISOString(),
+      endDate: form.value.isCurrentRole ? null : (form.value.endDate ? new Date(form.value.endDate).toISOString() : null),
+    }
+    if (editing.value) {
+      await jobHistoryService.update(editing.value.id, dto)
+      toast.success('Job entry updated.')
+    } else {
+      await jobHistoryService.create(dto)
+      toast.success('Job entry created.')
+    }
+    showForm.value = false
+    await loadJobs()
+  } finally {
+    saving.value = false
   }
-  if (editing.value) await jobHistoryService.update(editing.value.id, dto)
-  else await jobHistoryService.create(dto)
-  showForm.value = false
-  await loadJobs()
 }
 
 async function remove(id: number) {
   if (!confirm('Delete this job entry?')) return
   await jobHistoryService.delete(id)
+  toast.success('Job entry deleted.')
   await loadJobs()
 }
 
@@ -96,7 +111,7 @@ function formatDate(d: string) {
         </div>
         <div class="ml-auto flex gap-2">
           <button @click="showForm = false" class="px-3 py-1.5 text-xs font-mono border border-slate-200 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">cancel</button>
-          <button @click="save" class="px-3 py-1.5 text-xs font-mono rounded bg-emerald-500 dark:bg-cyan-500 text-white hover:bg-emerald-600 dark:hover:bg-cyan-600 transition-colors">save</button>
+          <button @click="save" :disabled="saving" class="px-3 py-1.5 text-xs font-mono rounded bg-emerald-500 dark:bg-cyan-500 text-white hover:bg-emerald-600 dark:hover:bg-cyan-600 transition-colors disabled:opacity-50">{{ saving ? 'saving...' : 'save' }}</button>
         </div>
       </div>
     </div>

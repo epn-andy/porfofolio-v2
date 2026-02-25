@@ -3,9 +3,12 @@ import { ref, onMounted } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { articlesService, type Article, type ArticleDto } from '../../services/articles'
+import { useToastStore } from '@/stores/toast'
 
+const toast = useToastStore()
 const articles = ref<Article[]>([])
 const loading = ref(true)
+const saving = ref(false)
 const showForm = ref(false)
 const editing = ref<Article | null>(null)
 const preview = ref('')
@@ -53,18 +56,30 @@ function generateSlug() {
 }
 
 async function saveArticle() {
-  if (editing.value) {
-    await articlesService.update(editing.value.id, form.value)
-  } else {
-    await articlesService.create(form.value)
+  saving.value = true
+  try {
+    const dto: ArticleDto = {
+      ...form.value,
+      excerpt: form.value.excerpt?.trim() || null,
+    }
+    if (editing.value) {
+      await articlesService.update(editing.value.id, dto)
+      toast.success('Article updated.')
+    } else {
+      await articlesService.create(dto)
+      toast.success('Article created.')
+    }
+    showForm.value = false
+    await loadArticles()
+  } finally {
+    saving.value = false
   }
-  showForm.value = false
-  await loadArticles()
 }
 
 async function deleteArticle(id: number) {
   if (!confirm('Delete this article?')) return
   await articlesService.delete(id)
+  toast.success('Article deleted.')
   await loadArticles()
 }
 </script>
@@ -112,7 +127,7 @@ async function deleteArticle(id: number) {
         </label>
         <div class="ml-auto flex gap-2">
           <button @click="showForm = false" class="px-3 py-1.5 text-xs font-mono border border-slate-200 dark:border-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">cancel</button>
-          <button @click="saveArticle" class="px-3 py-1.5 text-xs font-mono rounded bg-emerald-500 dark:bg-cyan-500 text-white hover:bg-emerald-600 dark:hover:bg-cyan-600 transition-colors">save</button>
+          <button @click="saveArticle" :disabled="saving" class="px-3 py-1.5 text-xs font-mono rounded bg-emerald-500 dark:bg-cyan-500 text-white hover:bg-emerald-600 dark:hover:bg-cyan-600 transition-colors disabled:opacity-50">{{ saving ? 'saving...' : 'save' }}</button>
         </div>
       </div>
     </div>
