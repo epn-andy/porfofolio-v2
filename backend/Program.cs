@@ -9,6 +9,34 @@ using PortfolioAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- Run DB tasks without starting the web server ---
+if (args.Contains("--migrate") || args.Contains("--seed"))
+{
+    builder.Services.AddDbContext<AppDbContext>(opt =>
+        opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    // Suppress Kestrel binding entirely
+    builder.WebHost.UseUrls("http://127.0.0.1:0");
+
+    var cliApp = builder.Build();
+
+    if (args.Contains("--migrate"))
+    {
+        Console.WriteLine("Running EF Core migrations...");
+        using var scope = cliApp.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.MigrateAsync();
+        Console.WriteLine("Migrations complete.");
+    }
+
+    if (args.Contains("--seed"))
+    {
+        Console.WriteLine("Seeding admin user...");
+        await PortfolioAPI.DbSeeder.SeedAsync(cliApp.Services, cliApp.Configuration);
+        Console.WriteLine("Seed complete.");
+    }
+
+    return;
+}
 // --- Database ---
 builder.Services.AddDbContext<AppDbContext>(opt =>
     opt.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -82,12 +110,5 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
-// Run seeder: dotnet run --seed
-if (args.Contains("--seed"))
-{
-    await PortfolioAPI.DbSeeder.SeedAsync(app.Services, app.Configuration);
-    return;
-}
 
 app.Run();
