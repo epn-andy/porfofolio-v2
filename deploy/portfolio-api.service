@@ -17,7 +17,7 @@ NotifyAccess=all
 User=www-data
 Group=www-data
 WorkingDirectory=/var/www/portfolioapi
-ExecStart=/var/www/portfolioapi/PortfolioAPI
+ExecStart=/usr/bin/dotnet /var/www/portfolioapi/PortfolioAPI.dll
 
 # Secrets — never commit this file with real values
 EnvironmentFile=/etc/portfolio/env

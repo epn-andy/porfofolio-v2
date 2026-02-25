@@ -29,10 +29,17 @@ chmod 600 /home/${DEPLOY_USER}/.ssh/authorized_keys
 # Ensure sudoers entry exists
 if [ ! -f /etc/sudoers.d/portfolio-deploy ]; then
   cat > /etc/sudoers.d/portfolio-deploy << EOF
-${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/systemctl restart portfolio-api, /bin/systemctl reload nginx
+${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/systemctl restart portfolio-api, /bin/systemctl reload nginx, /bin/chown -R www-data\:www-data /var/www/portfolioapi, /bin/chmod -R 755 /var/www/portfolioapi
 EOF
   chmod 440 /etc/sudoers.d/portfolio-deploy
   echo "    Sudoers entry created."
+else
+  # Update existing entry with new permissions
+  cat > /etc/sudoers.d/portfolio-deploy << EOF
+${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/systemctl restart portfolio-api, /bin/systemctl reload nginx, /bin/chown -R www-data\:www-data /var/www/portfolioapi, /bin/chmod -R 755 /var/www/portfolioapi
+EOF
+  chmod 440 /etc/sudoers.d/portfolio-deploy
+  echo "    Sudoers entry updated."
 fi
 
 echo ""
