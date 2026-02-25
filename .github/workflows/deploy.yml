@@ -128,8 +128,9 @@ jobs:
       - name: Health check
         run: |
           sleep 5
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
-            https://${{ secrets.VPS_HOST }}/api/articles)
+          STATUS=$(ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:5001/api/articles")
           echo "Health check status: $STATUS"
           if [ "$STATUS" -lt 200 ] || [ "$STATUS" -ge 500 ]; then
             echo "Health check FAILED"
