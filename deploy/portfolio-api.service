@@ -21,7 +21,7 @@ ExecStart=/usr/bin/dotnet /var/www/portfolioapi/PortfolioAPI.dll
 # Secrets — never commit this file with real values
 EnvironmentFile=/etc/portfolio/env
 Environment=ASPNETCORE_ENVIRONMENT=Production
-Environment=ASPNETCORE_URLS=http://127.0.0.1:5000
+Environment=ASPNETCORE_URLS=http://127.0.0.1:5001
 Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
 Environment=HOME=/home/deploy
 
