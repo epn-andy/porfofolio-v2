@@ -2,11 +2,16 @@
 # deploy/setup-server.sh
 #
 # ONE-TIME server bootstrap for Ubuntu 24.04 VPS (bare-metal deployment).
-# Run as root or sudo:  sudo bash deploy/setup-server.sh your-domain.com
+# Run as root or sudo:  sudo bash deploy/setup-server.sh
+#
+# SSL: Uses Cloudflare Origin Certificate (not Let's Encrypt).
+#      Before running this script, place your certs at:
+#        /etc/nginx/ssl/cloudflare.crt
+#        /etc/nginx/ssl/cloudflare.key
 
 set -euo pipefail
 
-DOMAIN="${1:?Usage: $0 <your-domain.com>}"
+DOMAIN="nayreisme.dev"
 DEPLOY_USER="deploy"
 DB_NAME="portfolio_db"
 DB_USER="portfolio_user"
@@ -16,8 +21,8 @@ JWT_SECRET="$(openssl rand -base64 48)"
 echo "==> [1/7] System update"
 apt-get update -qq && apt-get upgrade -y -qq
 
-echo "==> [2/7] Install Nginx & Certbot"
-apt-get install -y -qq nginx certbot python3-certbot-nginx
+echo "==> [2/7] Install Nginx"
+apt-get install -y -qq nginx
 
 echo "==> [3/7] Install .NET 10 runtime"
 wget -q https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb \
@@ -71,23 +76,29 @@ chown root:www-data /etc/portfolio/env
 
 echo "    Secrets saved to /etc/portfolio/env"
 
-echo "==> [7/7] Install systemd service, Nginx vhost & TLS"
+echo "==> [7/7] Install systemd service & Nginx vhost"
 
 # Systemd service
 cp /tmp/portfolio-v2/deploy/portfolio-api.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable portfolio-api
 
-# Nginx vhost
-sed "s/YOUR_DOMAIN/${DOMAIN}/g" /tmp/portfolio-v2/deploy/nginx.conf \
-  > /etc/nginx/sites-available/portfolio
+# Nginx ssl dir (Cloudflare Origin Cert must already be placed here)
+mkdir -p /etc/nginx/ssl
+if [[ ! -f /etc/nginx/ssl/cloudflare.crt || ! -f /etc/nginx/ssl/cloudflare.key ]]; then
+  echo ""
+  echo "  ⚠️  WARNING: /etc/nginx/ssl/cloudflare.crt or cloudflare.key not found."
+  echo "     Place your Cloudflare Origin Certificate files there, then run:"
+  echo "     sudo nginx -t && sudo systemctl reload nginx"
+  echo ""
+fi
+chmod 600 /etc/nginx/ssl/cloudflare.key 2>/dev/null || true
+
+# Nginx vhost (nginx.conf already has nayreisme.dev hardcoded)
+cp /tmp/portfolio-v2/deploy/nginx.conf /etc/nginx/sites-available/portfolio
 ln -sf /etc/nginx/sites-available/portfolio /etc/nginx/sites-enabled/portfolio
 rm -f /etc/nginx/sites-enabled/default
 nginx -t
-
-# TLS via Let's Encrypt
-certbot --nginx -d "${DOMAIN}" -d "www.${DOMAIN}" \
-  --non-interactive --agree-tos --email "admin@${DOMAIN}" --redirect
 
 systemctl reload nginx
 
@@ -102,5 +113,6 @@ echo "   2. Add GitHub Secrets (see deploy/GITHUB_SECRETS.md)"
 echo "   3. Run EF migrations:"
 echo "      cd /var/www/portfolioapi && dotnet PortfolioAPI.dll --migrate"
 echo "   4. Seed admin:  dotnet PortfolioAPI.dll --seed"
-echo "   5. Push to main → auto-deploys!"
+echo "   5. Ensure Cloudflare SSL mode is 'Full (strict)' in Cloudflare dashboard"
+echo "   6. Push to main → auto-deploys!"
 echo "======================================================"

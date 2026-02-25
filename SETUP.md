@@ -10,7 +10,8 @@ Complete step-by-step instructions to get the portfolio live on your Ubuntu 24.0
 
 Before starting, make sure you have:
 - [ ] A Ubuntu 24.04 VPS with root access
-- [ ] A domain name pointed to your VPS IP (A record)
+- [ ] Domain `nayreisme.dev` DNS pointed to your VPS IP (A record) via Cloudflare
+- [ ] Cloudflare SSL mode set to **Full (strict)** in the Cloudflare dashboard
 - [ ] This repo pushed to GitHub
 - [ ] [Git for Windows](https://git-scm.com/download/win) installed (includes Git Bash)
 - [ ] [Windows Terminal](https://aka.ms/terminal) recommended
@@ -59,17 +60,47 @@ ssh root@YOUR_VPS_IP
 
 > If this is your first time connecting, type `yes` when asked about the host fingerprint.
 
-### Step 3: Clone the repo & run the bootstrap script
+### Step 3: Upload Cloudflare Origin Certificate to VPS
 
-Once you are inside the VPS (your terminal prompt will change), run:
+Before running the bootstrap script, upload your Cloudflare Origin Certificate to the VPS.
+
+**On the Cloudflare dashboard:**
+1. Go to your domain → **SSL/TLS** → **Origin Server**
+2. Click **Create Certificate** → keep defaults → **Create**
+3. Copy the **Origin Certificate** (`.crt`) and **Private Key** (`.key`) contents
+
+**Upload to VPS** — open **Git Bash** locally and run:
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USERNAME/porfofolio-v2.git /tmp/portfolio-v2
-sudo bash /tmp/portfolio-v2/deploy/setup-server.sh your-domain.com
+# SSH into VPS
+ssh root@YOUR_VPS_IP
+
+# Create the SSL directory
+mkdir -p /etc/nginx/ssl
+
+# Create the cert file (paste Cloudflare cert content, then Ctrl+D)
+cat > /etc/nginx/ssl/cloudflare.crt
+
+# Create the key file (paste Cloudflare private key content, then Ctrl+D)
+cat > /etc/nginx/ssl/cloudflare.key
+
+chmod 600 /etc/nginx/ssl/cloudflare.key
 ```
 
-> Replace `your-domain.com` with your actual domain (e.g. `eryandhi.dev`).  
-> Make sure your domain DNS A record already points to your VPS IP before running this — Certbot needs it to issue the TLS certificate.
+> **Tip:** You can also use `scp` from Git Bash if you saved the files locally:
+> ```bash
+> scp cloudflare.crt root@YOUR_VPS_IP:/etc/nginx/ssl/
+> scp cloudflare.key root@YOUR_VPS_IP:/etc/nginx/ssl/
+> ```
+
+### Step 4: Run the bootstrap script
+
+Still inside the VPS terminal, run:
+
+```bash
+git clone https://github.com/epn-andy/porfofolio-v2.git /tmp/portfolio-v2
+sudo bash /tmp/portfolio-v2/deploy/setup-server.sh
+```
 
 This script automatically:
 - Installs Nginx, .NET 10 runtime, PostgreSQL
@@ -77,10 +108,9 @@ This script automatically:
 - Creates `/var/www/portfolio` and `/var/www/portfolioapi` directories
 - Generates secure random secrets → saves to `/etc/portfolio/env`
 - Installs the systemd service for the .NET API
-- Configures Nginx with your domain + HTTP→HTTPS redirect
-- Issues a free TLS certificate via Let's Encrypt
+- Configures Nginx with `nayreisme.dev` using your Cloudflare cert
 
-### Step 4: Add the SSH public key to the deploy user
+### Step 5: Add the SSH public key to the deploy user
 
 Still inside the VPS terminal, run:
 
@@ -104,7 +134,7 @@ ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... github-actions-deploy
 
 ## Part 3 — GitHub
 
-### Step 5: Add GitHub Secrets
+### Step 6: Add GitHub Secrets
 
 Go to your GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
@@ -134,7 +164,7 @@ Copy the **entire** output — including the header and footer lines:
 ```
 Paste the whole thing as the secret value.
 
-### Step 6: (Recommended) Create a production environment with approval gate
+### Step 7: (Recommended) Create a production environment with approval gate
 
 Go to **Settings** → **Environments** → **New environment** → name it exactly `production`
 
@@ -148,7 +178,7 @@ This means every deploy to your live server requires your manual approval click 
 
 ## Part 4 — First Deploy
 
-### Step 7: Push to main and trigger the pipeline
+### Step 8: Push to main and trigger the pipeline
 
 In **PowerShell** or **Git Bash**, from your project folder:
 
@@ -168,25 +198,25 @@ build-frontend ──┘
 
 If you set up the production environment, click **Review deployments** → tick `production` → **Approve and deploy**.
 
-### Step 8: Verify the deploy succeeded
+### Step 9: Verify the deploy succeeded
 
 Open **Git Bash** or **PowerShell** and run:
 
 ```bash
 # Check the API responds
-curl https://your-domain.com/api/articles
+curl https://nayreisme.dev/api/articles
 
 # Check the API service is running on the VPS
 ssh deploy@YOUR_VPS_IP "sudo systemctl status portfolio-api"
 ```
 
-Then open your browser and go to `https://your-domain.com` — you should see the portfolio.
+Then open your browser and go to `https://nayreisme.dev` — you should see the portfolio.
 
 ---
 
 ## Part 5 — After First Deploy
 
-### Step 9: Run database migrations
+### Step 10: Run database migrations
 
 SSH back into the VPS **as root** (or deploy user):
 
@@ -198,7 +228,7 @@ dotnet PortfolioAPI.dll --migrate
 
 This creates all the database tables (Articles, Projects, JobHistory, Admins).
 
-### Step 10: Seed the admin user
+### Step 11: Seed the admin user
 
 Still on the VPS, edit the env file to temporarily add your plain-text password:
 
@@ -209,7 +239,7 @@ sudo nano /etc/portfolio/env
 Add these two lines at the bottom (use your own email and a strong password):
 
 ```
-AdminSettings__Email=admin@your-domain.com
+AdminSettings__Email=admin@nayreisme.dev
 AdminSettings__PlainPassword=YourStrongPasswordHere
 ```
 
@@ -229,12 +259,12 @@ sudo nano /etc/portfolio/env
 sudo systemctl restart portfolio-api
 ```
 
-### Step 11: Log into the admin dashboard
+### Step 12: Log into the admin dashboard
 
 Open your browser and go to:
 
 ```
-https://your-domain.com/admin/login
+https://nayreisme.dev/admin/login
 ```
 
 Sign in with the email and password you set in Step 10.
@@ -282,11 +312,12 @@ sudo journalctl -u nginx -n 50 --no-pager
 sudo cat /etc/portfolio/env
 ```
 
-### TLS certificate renewal (runs automatically, but test it manually)
+### Cloudflare certificate expired or not loading
 
-```bash
-sudo certbot renew --dry-run
-```
+Cloudflare Origin Certificates are valid for up to 15 years. If you see SSL errors:
+1. Check `/etc/nginx/ssl/cloudflare.crt` and `.key` are in place
+2. Verify Cloudflare SSL mode is **Full (strict)** (not Flexible)
+3. Run `sudo nginx -t && sudo systemctl reload nginx`
 
 ### SSH connection refused from GitHub Actions
 
