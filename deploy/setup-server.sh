@@ -50,9 +50,9 @@ touch /home/${DEPLOY_USER}/.ssh/authorized_keys
 chown -R ${DEPLOY_USER}:${DEPLOY_USER} /home/${DEPLOY_USER}/.ssh
 chmod 700 /home/${DEPLOY_USER}/.ssh && chmod 600 /home/${DEPLOY_USER}/.ssh/authorized_keys
 
-# Let deploy user restart service, reload nginx, and fix ownership
+# Let deploy user restart service and reload nginx
 cat > /etc/sudoers.d/portfolio-deploy << EOF
-${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/systemctl restart portfolio-api, /bin/systemctl reload nginx, /bin/chown -R www-data\:www-data /var/www/portfolioapi, /bin/chmod -R 755 /var/www/portfolioapi
+${DEPLOY_USER} ALL=(ALL) NOPASSWD: /bin/systemctl restart portfolio-api, /bin/systemctl reload nginx
 EOF
 chmod 440 /etc/sudoers.d/portfolio-deploy
 
